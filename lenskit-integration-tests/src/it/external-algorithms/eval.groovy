@@ -24,12 +24,11 @@ import org.grouplens.lenskit.baseline.BaselineScorer
 import org.grouplens.lenskit.baseline.ItemMeanRatingItemScorer
 import org.grouplens.lenskit.baseline.UserMeanBaseline
 import org.grouplens.lenskit.baseline.UserMeanItemScorer
-import org.grouplens.lenskit.eval.metrics.predict.CoveragePredictMetric
-import org.grouplens.lenskit.eval.metrics.predict.HLUtilityPredictMetric
-import org.grouplens.lenskit.eval.metrics.predict.MAEPredictMetric
-import org.grouplens.lenskit.eval.metrics.predict.NDCGPredictMetric
-import org.grouplens.lenskit.eval.metrics.predict.RMSEPredictMetric
-import org.grouplens.lenskit.knn.item.ItemItemScorer
+import org.grouplens.lenskit.eval.data.crossfold.RandomOrder
+import org.grouplens.lenskit.eval.metrics.predict.*
+import org.grouplens.lenskit.eval.metrics.topn.*
+import org.grouplens.lenskit.knn.item.*
+import org.grouplens.lenskit.knn.user.*
 
 def dataDir = config['lenskit.movielens.100k']
 
@@ -38,7 +37,8 @@ trainTest {
         source csvfile("$dataDir/u.data") {
             delimiter "\t"
         }
-        partitions 5
+	order RandomOrder
+	partitions 5
         holdout 5
         train 'train.%d.csv'
         test 'test.%d.csv'
@@ -57,6 +57,11 @@ trainTest {
     metric MAEPredictMetric
     metric NDCGPredictMetric
     metric HLUtilityPredictMetric
+    metric topNnDCG {
+        listSize 10
+        candidates ItemSelectors.allItems()
+        exclude ItemSelectors.trainingItems()
+    }
 
     output 'results.csv'
     userOutput 'users.csv'
