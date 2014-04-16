@@ -34,8 +34,8 @@ def dataDir = config['lenskit.movielens.100k']
 
 trainTest {
     dataset crossfold("ML100K") {
-        source csvfile("$dataDir/u.data") {
-            delimiter "\t"
+        source csvfile("/project/grouplens/projects/gl-location/lenskit-data/user_ratings_100K.csv") {
+            delimiter ","
         }
 	order RandomOrder
 	partitions 5
@@ -44,14 +44,39 @@ trainTest {
         test 'test.%d.csv'
     }
 
-    externalAlgorithm("item-mean") {
-        command "python", "item-mean.py", "{TRAIN_DATA}", "{TEST_DATA}", "{OUTPUT}"
+    externalAlgorithm("LocationAwareCosineNoFallback") {
+        command "python", "/project/grouplens/projects/gl-location/lenskit-data/item_mean_cosine_nocoverage.py", "{TRAIN_DATA}", "{TEST_DATA}", "{OUTPUT}"
         workDir config.scriptDir
     }
-    algorithm("Baseline") {
+
+    algorithm("GlobalMean") {
+        bind ItemScorer to GlobalMeanRatingItemScorer
+    }
+/*
+    algorithm("ItemMean") {
         bind ItemScorer to ItemMeanRatingItemScorer
     }
 
+    algorithm("PersMean") {
+        bind ItemScorer to UserMeanItemScorer
+	bind (UserMeanBaseline, ItemScorer) to ItemMeanRatingItemScorer
+    }
+
+    algorithm("ItemItemNormalizedWithFallback") {
+        bind ItemScorer to ItemItemScorer
+	bind UserVectorNormalizer to BaselineSubtractingUserVectorNormalizer
+        within (UserVectorNormalizer) {
+            bind (BaselineScorer, ItemScorer) to ItemMeanRatingItemScorer
+        } 
+    }
+    algorithm("ItemItemNormalizedNoFallback") {
+        bind ItemScorer to ItemItemScorer
+	bind UserVectorNormalizer to BaselineSubtractingUserVectorNormalizer
+	at (RatingPredictor) {
+    	    bind (BaselineScorer, ItemScorer) to null
+	}
+    }
+*/
     metric CoveragePredictMetric
     metric RMSEPredictMetric
     metric MAEPredictMetric
